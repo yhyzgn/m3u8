@@ -11,40 +11,41 @@ import (
 	"strings"
 )
 
-func BuildRealURL(url, fileUrl string) string {
+// BuildRealURL 构建真实的 URL 地址
+func BuildRealURL(url, fileURL string) string {
 	switch true {
-	case strings.HasPrefix(fileUrl, "http://") || strings.HasPrefix(fileUrl, "https://"):
+	case strings.HasPrefix(fileURL, "http://") || strings.HasPrefix(fileURL, "https://"):
 		query := strings.Split(url, "?")
-		// 如果原 fileUrl 中有参数，但分片中没有，很可能需要把参数加回分片地址中
-		if !strings.Contains(fileUrl, "?") && len(query) > 1 {
-			fileUrl += "?" + query[1]
+		// 如果原 fileURL 中有参数，但分片中没有，很可能需要把参数加回分片地址中
+		if !strings.Contains(fileURL, "?") && len(query) > 1 {
+			fileURL += "?" + query[1]
 		}
 		// 绝对路径
 		break
-	case strings.HasPrefix(fileUrl, "/") && "" != url:
+	case strings.HasPrefix(fileURL, "/") && "" != url:
 		// 域名根路径
 		query := strings.Split(url, "?")
 		urlSplit := strings.Split(query[0], "://")
 		domain := strings.Split(urlSplit[1], "/")[0]
-		// 如果原 fileUrl 中有参数，但分片中没有，很可能需要把参数加回分片地址中
-		if !strings.Contains(fileUrl, "?") && len(query) > 1 {
-			fileUrl += "?" + query[1]
+		// 如果原 fileURL 中有参数，但分片中没有，很可能需要把参数加回分片地址中
+		if !strings.Contains(fileURL, "?") && len(query) > 1 {
+			fileURL += "?" + query[1]
 		}
-		fileUrl = urlSplit[0] + "://" + domain + fileUrl
+		fileURL = urlSplit[0] + "://" + domain + fileURL
 		break
-	case regexp.MustCompile("^[\\w+]").MatchString(fileUrl) && "" != url:
+	case regexp.MustCompile("^[\\w+]").MatchString(fileURL) && "" != url:
 		// 域名根路径
 		query := strings.Split(url, "?")
 		lastIndex := strings.LastIndex(query[0], "/")
 		root := url[0 : lastIndex+1]
-		// 如果原 fileUrl 中有参数，但分片中没有，很可能需要把参数加回分片地址中
-		if !strings.Contains(fileUrl, "?") && len(query) > 1 {
-			fileUrl += "?" + query[1]
+		// 如果原 fileURL 中有参数，但分片中没有，很可能需要把参数加回分片地址中
+		if !strings.Contains(fileURL, "?") && len(query) > 1 {
+			fileURL += "?" + query[1]
 		}
-		fileUrl = root + fileUrl
+		fileURL = root + fileURL
 		break
 	default:
 		break
 	}
-	return fileUrl
+	return fileURL
 }

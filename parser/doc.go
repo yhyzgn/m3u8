@@ -17,33 +17,35 @@ import (
 )
 
 const (
-	ExtM3u              = "#EXTM3U"
-	ExtVersion          = "#EXT-X-VERSION:"
-	ExtXIFrameStreamInf = "#EXT-X-I-FRAME-STREAM-INF"
-	ExtXStreamInf       = "#EXT-X-STREAM-INF:"
-	ExtInf              = "#EXTINF:"
-	ExtXKey             = "#EXT-X-KEY:"
-	ExtXEnd             = "#EXT-X-ENDLIST:"
+	extM3u              = "#EXTM3U"
+	extVersion          = "#EXT-X-VERSION:"
+	extXIFrameStreamInf = "#EXT-X-I-FRAME-STREAM-INF"
+	extXStreamInf       = "#EXT-X-STREAM-INF:"
+	extInf              = "#EXTINF:"
+	extXKey             = "#EXT-X-KEY:"
+	extXEnd             = "#EXT-X-ENDLIST:"
 
-	FieldProgramID  = "PROGRAM-ID"
-	FieldBandWidth  = "BANDWIDTH"
-	FieldResolution = "RESOLUTION"
-	FieldCodeCS     = "CODECS"
-	FieldURI        = "URI"
+	fieldProgramID  = "PROGRAM-ID"
+	fieldBandWidth  = "BANDWIDTH"
+	fieldResolution = "RESOLUTION"
+	fieldCodeCS     = "CODECS"
+	fieldURI        = "URI"
 
-	CryptMethodAES  model.CryptMethod = "AES-128"
-	CryptMethodNONE model.CryptMethod = "NONE"
+	cryptMethodAES  model.CryptMethod = "AES-128"
+	cryptMethodNONE model.CryptMethod = "NONE"
 )
 
 // regex pattern for extracting `key=value` parameters from a line
 var linePattern = regexp.MustCompile(`([a-zA-Z-]+)=("[^"]+"|[^",]+)`)
 
+// Doc 文档信息
 type Doc struct {
 	m3u8      *model.M3U8
 	Lines     [][]byte
 	LineIndex int
 }
 
+// NewDoc 创建一个文档对象
 func NewDoc(lines [][]byte, m3u8 *model.M3U8) *Doc {
 	return &Doc{
 		m3u8:      m3u8,
@@ -52,6 +54,7 @@ func NewDoc(lines [][]byte, m3u8 *model.M3U8) *Doc {
 	}
 }
 
+// Parse 开始解析
 func (d *Doc) Parse() (res *model.M3U8, err error) {
 	res = d.m3u8
 
@@ -64,7 +67,7 @@ func (d *Doc) Parse() (res *model.M3U8, err error) {
 		if 0 == d.LineIndex {
 			// 校验第一行，是否符合 m3u8 文件规范
 			// #EXTM3U
-			if string(line) != ExtM3u {
+			if string(line) != extM3u {
 				err = errors.New("illegal m3u8 content")
 				return
 			}
@@ -73,7 +76,7 @@ func (d *Doc) Parse() (res *model.M3U8, err error) {
 
 		// 其他行
 		switch true {
-		case bytes.HasPrefix(line, []byte(ExtVersion)):
+		case bytes.HasPrefix(line, []byte(extVersion)):
 			// 版本信息
 			vsnBys := bytes.Split(line, []byte(":"))[1]
 			if version, e := strconv.Atoi(string(vsnBys)); nil != e {
@@ -82,7 +85,7 @@ func (d *Doc) Parse() (res *model.M3U8, err error) {
 				res.Version = version
 			}
 			break
-		case bytes.HasPrefix(line, []byte(ExtInf)):
+		case bytes.HasPrefix(line, []byte(extInf)):
 			// 分片TS的信息，如时长，带宽等
 			// #EXTINF:duration,<title>
 			extInf := bytes.Split(line, []byte(":"))[1]
@@ -99,40 +102,40 @@ func (d *Doc) Parse() (res *model.M3U8, err error) {
 				})
 			}
 			break
-		case bytes.HasPrefix(line, []byte(ExtXKey)):
+		case bytes.HasPrefix(line, []byte(extXKey)):
 			// 加密解密信息
 			keyInfMap := parseLineKVMap(string(line))
 			method := model.CryptMethod(keyInfMap["METHOD"])
-			if method != "" && method != CryptMethodAES && method != CryptMethodNONE {
+			if method != "" && method != cryptMethodAES && method != cryptMethodNONE {
 				err = errors.New("invalid EXT-X-KEY method: " + string(method))
 				return
 			}
-			keyUri := util.BuildRealURL(res.URL, keyInfMap["URI"])
+			keyURI := util.BuildRealURL(res.URL, keyInfMap["URI"])
 			key = &model.Key{
 				Method: method,
-				URI:    keyUri,
+				URI:    keyURI,
 				IV:     keyInfMap["IV"],
 			}
 			break
-		case bytes.HasPrefix(line, []byte(ExtXIFrameStreamInf)):
+		case bytes.HasPrefix(line, []byte(extXIFrameStreamInf)):
 			// 指定一个包含多媒体信息的 media URI 作为PlayList
 			infMap := parseLineKVMap(string(line))
 
 			// 此时，下一行就是改播放源的 URL
 			var playURL string
-			if uri, ok := infMap[FieldURI]; ok {
+			if uri, ok := infMap[fieldURI]; ok {
 				playURL = util.BuildRealURL(res.URL, uri)
 			}
 
 			res.PlayList = append(res.PlayList, model.PlayItem{
-				ProgramID:  infMap[FieldProgramID],
-				BandWidth:  infMap[FieldBandWidth],
-				Resolution: infMap[FieldResolution],
-				CodeCS:     infMap[FieldCodeCS],
+				ProgramID:  infMap[fieldProgramID],
+				BandWidth:  infMap[fieldBandWidth],
+				Resolution: infMap[fieldResolution],
+				CodeCS:     infMap[fieldCodeCS],
 				URL:        playURL,
 			})
 			break
-		case bytes.HasPrefix(line, []byte(ExtXStreamInf)):
+		case bytes.HasPrefix(line, []byte(extXStreamInf)):
 			// 指定一个包含多媒体信息的 media URI 作为PlayList
 			infMap := parseLineKVMap(string(line))
 
@@ -143,14 +146,14 @@ func (d *Doc) Parse() (res *model.M3U8, err error) {
 			}
 
 			res.PlayList = append(res.PlayList, model.PlayItem{
-				ProgramID:  infMap[FieldProgramID],
-				BandWidth:  infMap[FieldBandWidth],
-				Resolution: infMap[FieldResolution],
-				CodeCS:     infMap[FieldCodeCS],
+				ProgramID:  infMap[fieldProgramID],
+				BandWidth:  infMap[fieldBandWidth],
+				Resolution: infMap[fieldResolution],
+				CodeCS:     infMap[fieldCodeCS],
 				URL:        playURL,
 			})
 			break
-		case bytes.HasPrefix(line, []byte(ExtXEnd)):
+		case bytes.HasPrefix(line, []byte(extXEnd)):
 			// 文档末尾了
 			return
 		}
@@ -158,11 +161,13 @@ func (d *Doc) Parse() (res *model.M3U8, err error) {
 	return
 }
 
+// Line 读取当前行
 func (d *Doc) Line() (line []byte) {
 	line = d.Lines[d.LineIndex]
 	return
 }
 
+// HasNextLine 判断是否有下一行，如果有，自动将游标移动到下一行
 func (d *Doc) HasNextLine() bool {
 	if d.LineIndex >= len(d.Lines)-1 {
 		return false

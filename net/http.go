@@ -10,6 +10,7 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+// Get http GET 请求方式
 func Get(url string) (data []byte, err error) {
 	req := fasthttp.AcquireRequest()
 	// 用完需要释放资源

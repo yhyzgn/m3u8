@@ -12,6 +12,7 @@ import (
 	"crypto/cipher"
 )
 
+// AES128Encrypt AES-128 加密
 func AES128Encrypt(origData, key, iv []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -23,12 +24,13 @@ func AES128Encrypt(origData, key, iv []byte) ([]byte, error) {
 	}
 	origData = pkcs5Padding(origData, blockSize)
 	blockMode := cipher.NewCBCEncrypter(block, iv[:blockSize])
-	crypted := make([]byte, len(origData))
-	blockMode.CryptBlocks(crypted, origData)
-	return crypted, nil
+	ed := make([]byte, len(origData))
+	blockMode.CryptBlocks(ed, origData)
+	return ed, nil
 }
 
-func AES128Decrypt(crypted, key, iv []byte) ([]byte, error) {
+// AES128Decrypt AES-128 解密
+func AES128Decrypt(data, key, iv []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -38,8 +40,8 @@ func AES128Decrypt(crypted, key, iv []byte) ([]byte, error) {
 		iv = key
 	}
 	blockMode := cipher.NewCBCDecrypter(block, iv[:blockSize])
-	origData := make([]byte, len(crypted))
-	blockMode.CryptBlocks(origData, crypted)
+	origData := make([]byte, len(data))
+	blockMode.CryptBlocks(origData, data)
 	origData = pkcs5UnPadding(origData)
 	return origData, nil
 }

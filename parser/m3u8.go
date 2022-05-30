@@ -16,6 +16,7 @@ import (
 	"io"
 )
 
+// FromFile 从文件一些
 func FromFile(filename string) (m3u8 *model.M3U8, err error) {
 	if !file.Exists(filename) {
 		err = errors.New("no such file + '" + filename + "'")
@@ -32,6 +33,7 @@ func FromFile(filename string) (m3u8 *model.M3U8, err error) {
 	return
 }
 
+// FromNetwork 从网络解析
 func FromNetwork(url string) (m3u8 *model.M3U8, err error) {
 	data, err := net.Get(url)
 	if nil != err {
@@ -43,10 +45,12 @@ func FromNetwork(url string) (m3u8 *model.M3U8, err error) {
 	return
 }
 
+// FromString 从文本字符串解析
 func FromString(src string) (m3u8 *model.M3U8, err error) {
 	return formBytes([]byte(src), &model.M3U8{})
 }
 
+// FromBytes 从二进制数据解析
 func FromBytes(bys []byte) (m3u8 *model.M3U8, err error) {
 	return formBytes(bys, &model.M3U8{})
 }
