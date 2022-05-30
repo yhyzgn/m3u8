@@ -10,7 +10,6 @@ import (
 	"bytes"
 	"errors"
 	"github.com/yhyzgn/m3u8/model"
-	"github.com/yhyzgn/m3u8/net"
 	"github.com/yhyzgn/m3u8/util"
 	"regexp"
 	"strconv"
@@ -18,17 +17,19 @@ import (
 )
 
 const (
-	ExtM3u        = "#EXTM3U"
-	ExtVersion    = "#EXT-X-VERSION:"
-	ExtXStreamInf = "#EXT-X-STREAM-INF:"
-	ExtInf        = "#EXTINF:"
-	ExtXKey       = "#EXT-X-KEY:"
-	ExtXEnd       = "#EXT-X-ENDLIST:"
+	ExtM3u              = "#EXTM3U"
+	ExtVersion          = "#EXT-X-VERSION:"
+	ExtXIFrameStreamInf = "#EXT-X-I-FRAME-STREAM-INF"
+	ExtXStreamInf       = "#EXT-X-STREAM-INF:"
+	ExtInf              = "#EXTINF:"
+	ExtXKey             = "#EXT-X-KEY:"
+	ExtXEnd             = "#EXT-X-ENDLIST:"
 
 	FieldProgramID  = "PROGRAM-ID"
 	FieldBandWidth  = "BANDWIDTH"
 	FieldResolution = "RESOLUTION"
 	FieldCodeCS     = "CODECS"
+	FieldURI        = "URI"
 
 	CryptMethodAES  model.CryptMethod = "AES-128"
 	CryptMethodNONE model.CryptMethod = "NONE"
@@ -107,17 +108,29 @@ func (d *Doc) Parse() (res *model.M3U8, err error) {
 				return
 			}
 			keyUri := util.BuildRealURL(res.URL, keyInfMap["URI"])
-			keyValue, e := net.Get(keyUri)
-			if nil != e {
-				err = e
-				return
-			}
 			key = &model.Key{
 				Method: method,
 				URI:    keyUri,
 				IV:     keyInfMap["IV"],
-				Value:  string(keyValue),
 			}
+			break
+		case bytes.HasPrefix(line, []byte(ExtXIFrameStreamInf)):
+			// 指定一个包含多媒体信息的 media URI 作为PlayList
+			infMap := parseLineKVMap(string(line))
+
+			// 此时，下一行就是改播放源的 URL
+			var playURL string
+			if uri, ok := infMap[FieldURI]; ok {
+				playURL = util.BuildRealURL(res.URL, uri)
+			}
+
+			res.PlayList = append(res.PlayList, model.PlayItem{
+				ProgramID:  infMap[FieldProgramID],
+				BandWidth:  infMap[FieldBandWidth],
+				Resolution: infMap[FieldResolution],
+				CodeCS:     infMap[FieldCodeCS],
+				URL:        playURL,
+			})
 			break
 		case bytes.HasPrefix(line, []byte(ExtXStreamInf)):
 			// 指定一个包含多媒体信息的 media URI 作为PlayList

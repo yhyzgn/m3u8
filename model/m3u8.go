@@ -38,5 +38,4 @@ type Key struct {
 	Method CryptMethod
 	URI    string
 	IV     string
-	Value  string
 }

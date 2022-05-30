@@ -10,7 +10,8 @@ import "testing"
 
 const (
 	//url    = "https://bvujarg.xyz/tv_adult/avid6228f4d21745b/avid6228f4d21745b.m3u8?siteUrl=https://video.awvvvvw.live"
-	url = "https://bf1.semaobf1.com/20220520/6A87E01765D2A36C/hls/1500k/index.m3u8"
+	//url = "https://bf1.semaobf1.com/20220520/6A87E01765D2A36C/hls/1500k/index.m3u8"
+	url = "http://kbs-dokdo.gscdn.com/dokdo_300/_definst_/dokdo_300.stream/playlist.m3u8"
 
 	master = `#EXTM3U
 #EXT-X-STREAM-INF:BANDWIDTH=150000,RESOLUTION=416x234,CODECS="avc1.42e00a,mp4a.40.2"
